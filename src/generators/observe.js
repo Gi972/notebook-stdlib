@@ -1,7 +1,10 @@
-import noop from "../noop";
+import that from "../that";
 
 export default function(initialize) {
-  var stale = false, value, resolve, finalize = initialize(change);
+  let stale = false;
+  let value;
+  let resolve;
+  const dispose = initialize(change);
 
   function change(x) {
     if (resolve) resolve(x), resolve = null;
@@ -12,12 +15,13 @@ export default function(initialize) {
   function next() {
     return {done: false, value: stale
         ? (stale = false, Promise.resolve(value))
-        : new Promise(function(_) { resolve = _; })};
+        : new Promise(_ => (resolve = _))};
   }
 
   return {
-    throw: noop,
-    return: finalize == null ? noop : finalize,
-    next: next
+    [Symbol.iterator]: that,
+    throw: () => ({done: true}),
+    return: () => (dispose != null && dispose(), {done: true}),
+    next
   };
 }

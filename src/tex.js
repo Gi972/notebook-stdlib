@@ -1,3 +1,5 @@
+var raw = String.raw;
+
 function style(href) {
   return new Promise(function(resolve, reject) {
     var link = document.createElement("link");
@@ -9,24 +11,23 @@ function style(href) {
   });
 }
 
-export default function(require, resource) {
+export default function(require) {
   return function() {
     return Promise.all([
-      require("katex@0.8.3/dist/katex.min.js"),
-      style(resource("katex@0.8.3/dist/katex.min.css"))
+      require("@observablehq/katex@0.10.1/dist/katex.min.js"),
+      require.resolve("@observablehq/katex@0.10.1/dist/katex.min.css").then(style)
     ]).then(function(values) {
       var katex = values[0], tex = renderer();
 
       function renderer(options) {
-        return function(strings) {
-          var string = strings[0] + "", i = 0, n = arguments.length;
-          while (++i < n) string += arguments[i] + "" + strings[i];
+        return function() {
           var root = document.createElement("div");
-          katex.render(string, root, options);
+          katex.render(raw.apply(String, arguments), root, options);
           return root.removeChild(root.firstChild);
         };
       }
 
+      tex.options = renderer;
       tex.block = renderer({displayMode: true});
       return tex;
     });
